@@ -36,23 +36,46 @@ $("#add-train").on("click", function(event) {
     $("#frequency").val("");
 })
 
+var currentTime = moment();
+console.log("Current time: " + moment(currentTime).format("hh:mm"));
+
 database.ref().on("child_added", function(childSnapshot) {
     console.log(childSnapshot.val())
+    var startTimeConverted = moment((childSnapshot.val().startTime), "HH:mm").subtract(1, "years");
+    console.log("Start time: " + startTimeConverted);
+
+    var timeDifference = moment().diff(moment(startTimeConverted), "minutes");
+    console.log("Difference in time: " + timeDifference);
+
+    var remainder = timeDifference % childSnapshot.val().frequency;
+    console.log("Remainder: " + remainder);
+
+    var minTillTrain = childSnapshot.val().frequency - remainder;
+    console.log("Minutes till next train: " + minTillTrain);
+
+    var nextTrain = moment().add(minTillTrain, "minutes");
+    console.log("Next train will arrive at: " + moment(nextTrain).format("hh:mm"));
+    
     var newRow = $("<tr>");
-    var tableName = $("<td>");
-    tableName.text(childSnapshot.val().trainName);
-    var tableDestination = $("<td>");
-    tableDestination.text(childSnapshot.val().destination);
-    var tableFrequency = $("<td>");
-    tableFrequency.text(childSnapshot.val().frequency);
-    var tableNextArrival = $("<td>");
-    tableNextArrival.text("Placeholder");
-    var tableMinutesAway = $("<td>");
-    tableMinutesAway.text("Placeholder");
-    newRow.append(tableName);
-    newRow.append(tableDestination);
-    newRow.append(tableFrequency);
-    newRow.append(tableNextArrival);
-    newRow.append(tableMinutesAway);
-    $("#train-schedule").append(newRow);
+       var tableName = $("<td>");
+            tableName.text(childSnapshot.val().trainName);
+
+        var tableDestination = $("<td>");
+            tableDestination.text(childSnapshot.val().destination);
+    
+        var tableFrequency = $("<td>");
+            tableFrequency.text(childSnapshot.val().frequency);
+    
+        var tableNextArrival = $("<td>");
+            tableNextArrival.text(moment(nextTrain).format("hh:mm"));
+
+        var tableMinutesAway = $("<td>");
+            tableMinutesAway.text(minTillTrain);
+
+        newRow.append(tableName);
+        newRow.append(tableDestination);
+        newRow.append(tableFrequency);
+        newRow.append(tableNextArrival);
+        newRow.append(tableMinutesAway);
+        $("#train-schedule").append(newRow);
 })
