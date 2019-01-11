@@ -1,8 +1,11 @@
+// Sets up global variables that will be used by the input fields
 var trainName = "";
 var destination = "";
 var startTime = "";
 var frequency = "";
 
+// ----------------------------------------------------------
+// Configures and initializes firebase, and also declares the database variable
 var config = {
     apiKey: "AIzaSyBXe5dqRPad77fTdLsNFpA1FBr4zU9gcDE",
     authDomain: "train-scheduler-72153.firebaseapp.com",
@@ -14,10 +17,11 @@ var config = {
   firebase.initializeApp(config);
 
 var database = firebase.database();
+// ----------------------------------------------------------
 
+// A click event that takes the user inputs and pushes them to the database
 $("#add-train").on("click", function(event) {
     event.preventDefault();
-    console.log("hello")
     trainName = $("#train-name-input").val().trim();
     destination = $("#destination-input").val().trim();
     startTime = $("#start-time").val().trim();
@@ -36,46 +40,66 @@ $("#add-train").on("click", function(event) {
     $("#frequency").val("");
 })
 
+// Variable containing the current time. This is used to calculate next arrival time and time until next arrival
 var currentTime = moment();
-console.log("Current time: " + moment(currentTime).format("hh:mm"));
+                     
+function tableMaker() {
+    database.ref().on("child_added", function(childSnapshot) {
+        
 
-database.ref().on("child_added", function(childSnapshot) {
-    console.log(childSnapshot.val())
-    var startTimeConverted = moment((childSnapshot.val().startTime), "HH:mm").subtract(1, "years");
-    console.log("Start time: " + startTimeConverted);
+        var frequency = childSnapshot.val().frequency;
 
-    var timeDifference = moment().diff(moment(startTimeConverted), "minutes");
-    console.log("Difference in time: " + timeDifference);
+        var startTimeConverted = moment((childSnapshot.val().startTime), "HH:mm").subtract(1, "years");
 
-    var remainder = timeDifference % childSnapshot.val().frequency;
-    console.log("Remainder: " + remainder);
+        var timeDifference;
+        var remainder;
+        var minTillTrain;
+        var nextTrain;
+        
+        function timeUpdate() { 
+            timeDifference = moment().diff(moment(startTimeConverted), "minutes");
+            remainder = timeDifference % childSnapshot.val().frequency;
+            minTillTrain = frequency - remainder;
+            nextTrain = moment().add(minTillTrain, "minutes");
+        }
 
-    var minTillTrain = childSnapshot.val().frequency - remainder;
-    console.log("Minutes till next train: " + minTillTrain);
+        timeUpdate();
+        
 
-    var nextTrain = moment().add(minTillTrain, "minutes");
-    console.log("Next train will arrive at: " + moment(nextTrain).format("hh:mm"));
-    
-    var newRow = $("<tr>");
-       var tableName = $("<td>");
-            tableName.text(childSnapshot.val().trainName);
+        var newRow = $("<tr>");
+        var tableName = $("<td>");
+                tableName.text(childSnapshot.val().trainName);
 
-        var tableDestination = $("<td>");
-            tableDestination.text(childSnapshot.val().destination);
-    
-        var tableFrequency = $("<td>");
-            tableFrequency.text(childSnapshot.val().frequency);
-    
-        var tableNextArrival = $("<td>");
-            tableNextArrival.text(moment(nextTrain).format("hh:mm"));
+            var tableDestination = $("<td>");
+                tableDestination.text(childSnapshot.val().destination);
+        
+            var tableFrequency = $("<td>");
+                tableFrequency.text(childSnapshot.val().frequency);
 
-        var tableMinutesAway = $("<td>");
-            tableMinutesAway.text(minTillTrain);
+            
+            var tableNextArrival = $("<td>");
+                tableNextArrival.addClass("next-arrival");
+                tableNextArrival.text(moment(nextTrain).format("hh:mm"));
+                
+            var tableMinutesAway = $("<td>");
+                tableMinutesAway.addClass("minutes-till-train");
+                tableMinutesAway.text(minTillTrain);
+                
+            setInterval(function() {
+                console.log("ping");
+                timeUpdate();
+                tableMinutesAway.text(minTillTrain);
+                tableNextArrival.text(moment(nextTrain).format("hh:mm"));
+            }, 1000 * 60);
 
-        newRow.append(tableName);
-        newRow.append(tableDestination);
-        newRow.append(tableFrequency);
-        newRow.append(tableNextArrival);
-        newRow.append(tableMinutesAway);
-        $("#train-schedule").append(newRow);
-})
+            newRow.append(tableName);
+            newRow.append(tableDestination);
+            newRow.append(tableFrequency);
+            newRow.append(tableNextArrival);
+            newRow.append(tableMinutesAway);
+            $("#train-schedule").append(newRow);
+    })
+}
+
+tableMaker();
+
