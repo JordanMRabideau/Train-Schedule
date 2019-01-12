@@ -84,9 +84,12 @@ function tableMaker() {
             var tableMinutesAway = $("<td>");
                 tableMinutesAway.addClass("minutes-till-train");
                 tableMinutesAway.text(minTillTrain);
+
+            // var removeButton = $("<button>");
+            //     removeButton.addClass("removeTrain");
+            //     removeButton.text("Remove");
                 
             setInterval(function() {
-                console.log("ping");
                 timeUpdate();
                 tableMinutesAway.text(minTillTrain);
                 tableNextArrival.text(moment(nextTrain).format("hh:mm"));
@@ -97,6 +100,7 @@ function tableMaker() {
             newRow.append(tableFrequency);
             newRow.append(tableNextArrival);
             newRow.append(tableMinutesAway);
+            // newRow.append(removeButton);
             $("#train-schedule").append(newRow);
     })
 }
